@@ -87,7 +87,8 @@ calibration = function(data, marginMatrix, colWeights, method="linear", bounds=N
                        , maxIter=2500, check=TRUE, calibTolerance=1e-06
                        , uCostPenalized=1, lambda=NULL
                        , precisionBounds=1e-4, forceSimplex=FALSE, forceBisection=FALSE
-                       , colCalibratedWeights, exportDistributionImage=NULL, exportDistributionTable=NULL) {
+                       , colCalibratedWeights, exportDistributionImage=NULL, exportDistributionTable=NULL,
+                       tolDefinition = "default") {
   
   
   ## Deprecate an argument that is only used in the scope
@@ -182,7 +183,7 @@ calibration = function(data, marginMatrix, colWeights, method="linear", bounds=N
     
     if( (is.numeric(bounds)) || (method != "min") ) {
       g <- calib(Xs=matrixCal, d=weights, total=formattedMargins, q=q,
-                 method=method, bounds=bounds, maxIter=maxIter, calibTolerance=calibTolerance)
+                 method=method, bounds=bounds, maxIter=maxIter, calibTolerance=calibTolerance,tolDefinition = tolDefinition)
     } else {
       if( (any(identical(bounds,"min"))) || (method == "min")) {
         g <- minBoundsCalib(Xs=matrixCal, d=weights, total=formattedMargins
