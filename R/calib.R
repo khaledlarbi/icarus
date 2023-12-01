@@ -5,7 +5,9 @@
 # Function Wrapper
 calib <- function(Xs, d, total, q=NULL, method=NULL, bounds = NULL,
                   alpha = NULL,
-                  maxIter=500, calibTolerance=1e-06) {
+                  maxIter=500, 
+                  calibTolerance=1e-06,
+                  tolDefinition = "default") {
 
   if(!is.null(method)) {
   switch(method,
@@ -25,7 +27,7 @@ calib <- function(Xs, d, total, q=NULL, method=NULL, bounds = NULL,
             inverseDistance <- inverseDistanceLogit
             params <- bounds
             updateParameters <- identity
-            distanceFunction <- distanceLogitBounds
+            distanceFunction <- function(w,d){distanceLogitBounds(w,d,bounds)}
           },
 #            truncated={
 #              inverseDistance <- inverseDistanceTruncated
@@ -56,13 +58,15 @@ calib <- function(Xs, d, total, q=NULL, method=NULL, bounds = NULL,
 
   return(calibAlgorithm(Xs, d, total, q, inverseDistance,
                         updateParameters, params, maxIter, calibTolerance,
-                        distanceFunction = distanceFunction))
+                        distanceFunction = distanceFunction,
+                        tolDefinition = tolDefinition))
 
 }
 
 calibAlgorithm <- function(Xs, d, total, q=NULL,
                             inverseDistance, updateParameters, params,
-                            maxIter=500, calibTolerance=1e-06, distanceFunction = NULL) {
+                            maxIter=500, calibTolerance=1e-06,
+                           distanceFunction = NULL, tolDefinition = "default") {
 
   if(is.null(q)) {
     q <- rep(1,length(d))
@@ -80,7 +84,8 @@ calibAlgorithm <- function(Xs, d, total, q=NULL,
   l <- 1
 
   while (cont) {
-
+    #Save old value of w
+    w_old <- wTemp
     phi = t(Xs) %*% wTemp - total
     T1 = t(Xs * wUpdate)
     phiprim = T1 %*% Xs
@@ -101,9 +106,25 @@ calibAlgorithm <- function(Xs, d, total, q=NULL,
     }
 
     tHat = t(Xs) %*% wTemp
-    if (max(abs(tHat - total)/total) < calibTolerance) {
-      cont <- FALSE
+    if(tolDefinition == "default"){
+      if (max(abs(tHat - total)/total) < calibTolerance) {
+        cont <- FALSE
+      }
+    } else if(tolDefinition == "sas"){
+      #Compute objective functions (distance) with the updated 
+      #parameters
+      
+      #Note : I added [[1]] after the output of distanceFunction
+      #because some distance functions return a list
+      #(such as distanceRaking) while others return a numeric vector of size 1.
+      #TODO : make the distance functions outputs more consistent.
+      obj_old <- distanceFunction(w = w_old, d = d)[[1]] 
+      obj_new <- distanceFunction(w = wTemp, d = d)[[1]]
+      cont <- abs(obj_old - obj_new) > calibTolerance
+    } else if(tolDefinition == "maxWeights"){
+      
     }
+    
 
     if(l >= maxIter) {
       cont <- FALSE
