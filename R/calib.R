@@ -13,16 +13,19 @@ calib <- function(Xs, d, total, q=NULL, method=NULL, bounds = NULL,
             inverseDistance <- inverseDistanceLinear
             params <- NULL
             updateParameters <- identity
+            distanceFunction <- distanceKhiTwo
           },
           raking={
             inverseDistance <- inverseDistanceRaking
             params <- NULL
             updateParameters <- identity
+            distanceFunction <- distanceRaking
           },
           logit={
             inverseDistance <- inverseDistanceLogit
             params <- bounds
             updateParameters <- identity
+            distanceFunction <- distanceLogitBounds
           },
 #            truncated={
 #              inverseDistance <- inverseDistanceTruncated
@@ -40,6 +43,7 @@ calib <- function(Xs, d, total, q=NULL, method=NULL, bounds = NULL,
             params <- NULL
             inverseDistance <- inverseDistanceRaking
             updateParameters <- identity
+            distanceFunction <- distanceRaking
           }
   )
   } else {
@@ -51,13 +55,14 @@ calib <- function(Xs, d, total, q=NULL, method=NULL, bounds = NULL,
   # TODO : additional checks ?
 
   return(calibAlgorithm(Xs, d, total, q, inverseDistance,
-                        updateParameters, params, maxIter, calibTolerance))
+                        updateParameters, params, maxIter, calibTolerance,
+                        distanceFunction = distanceFunction))
 
 }
 
 calibAlgorithm <- function(Xs, d, total, q=NULL,
                             inverseDistance, updateParameters, params,
-                            maxIter=500, calibTolerance=1e-06) {
+                            maxIter=500, calibTolerance=1e-06, distanceFunction = NULL) {
 
   if(is.null(q)) {
     q <- rep(1,length(d))
