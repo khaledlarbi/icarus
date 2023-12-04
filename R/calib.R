@@ -7,7 +7,8 @@ calib <- function(Xs, d, total, q=NULL, method=NULL, bounds = NULL,
                   alpha = NULL,
                   maxIter=500, 
                   calibTolerance=1e-06,
-                  tolDefinition = "default") {
+                  tolDefinition = "default",
+                  description = FALSE) {
 
   if(!is.null(method)) {
   switch(method,
@@ -59,14 +60,16 @@ calib <- function(Xs, d, total, q=NULL, method=NULL, bounds = NULL,
   return(calibAlgorithm(Xs, d, total, q, inverseDistance,
                         updateParameters, params, maxIter, calibTolerance,
                         distanceFunction = distanceFunction,
-                        tolDefinition = tolDefinition))
+                        tolDefinition = tolDefinition,
+                        description = description))
 
 }
 
 calibAlgorithm <- function(Xs, d, total, q=NULL,
                             inverseDistance, updateParameters, params,
                             maxIter=500, calibTolerance=1e-06,
-                           distanceFunction = NULL, tolDefinition = "default") {
+                           distanceFunction = NULL, tolDefinition = "default",
+                           description = FALSE) {
 
   if(is.null(q)) {
     q <- rep(1,length(d))
@@ -85,7 +88,7 @@ calibAlgorithm <- function(Xs, d, total, q=NULL,
 
   while (cont) {
     #Save old value of w
-    w_old <- wTemp
+    f_old <- inverseDistance(Xs %*% lambda * q, params)[[1]]
     phi = t(Xs) %*% wTemp - total
     T1 = t(Xs * wUpdate)
     phiprim = T1 %*% Xs
@@ -109,6 +112,10 @@ calibAlgorithm <- function(Xs, d, total, q=NULL,
     if(tolDefinition == "default"){
       if (max(abs(tHat - total)/total) < calibTolerance) {
         cont <- FALSE
+        if(!cont & description){
+          cat("################### Objective function : ####################### \n")
+          print(max(abs(tHat - total)/total))
+        }
       }
     } else if(tolDefinition == "sas"){
       #Compute objective functions (distance) with the updated 
@@ -118,11 +125,13 @@ calibAlgorithm <- function(Xs, d, total, q=NULL,
       #because some distance functions return a list
       #(such as distanceRaking) while others return a numeric vector of size 1.
       #TODO : make the distance functions outputs more consistent.
-      obj_old <- distanceFunction(w = w_old, d = d)[[1]] 
-      obj_new <- distanceFunction(w = wTemp, d = d)[[1]]
-      cont <- abs(obj_old - obj_new) > calibTolerance
-    } else if(tolDefinition == "maxWeights"){
-      
+      obj_old <- f_old 
+      obj_new <- inverseDistance(Xs %*% lambda * q, params)[[1]]
+      cont <- any(abs(obj_old - obj_new) > calibTolerance)
+      if(!cont & description){
+        cat("################### Objective function : ####################### \n")
+        print(max(abs(obj_old - obj_new)))
+      }
     }
     
 

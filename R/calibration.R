@@ -183,7 +183,8 @@ calibration = function(data, marginMatrix, colWeights, method="linear", bounds=N
     
     if( (is.numeric(bounds)) || (method != "min") ) {
       g <- calib(Xs=matrixCal, d=weights, total=formattedMargins, q=q,
-                 method=method, bounds=bounds, maxIter=maxIter, calibTolerance=calibTolerance,tolDefinition = tolDefinition)
+                 method=method, bounds=bounds, maxIter=maxIter, calibTolerance=calibTolerance,
+                 tolDefinition = tolDefinition, description = description)
     } else {
       if( (any(identical(bounds,"min"))) || (method == "min")) {
         g <- minBoundsCalib(Xs=matrixCal, d=weights, total=formattedMargins
