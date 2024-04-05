@@ -53,6 +53,14 @@
 #' description is TRUE is exported. Requires package "ggplot2"
 #' @param exportDistributionTable File name to which the distribution table of before/after
 #' weights shown when description is TRUE is exported. Requires package "xtable"
+#' @param tolDefinition The stopping criterion used while optimizing. Can be "default" or "sas". 
+#' See @Details for more informations. 
+#' 
+#' @details
+#' Choice of stopping criterion : \itemize{\item When "sas" is used, the optimization algorithm stops when ratios between calibrated and initial weights
+#' don't change (according to \code{calibTolerance}) over two consecutive iterations. This criterion is consistent with the definition given in Calmar.
+#' \item When "default" is used,  the optimization algorithm stops when relative differences between calibrated estimations 
+#' and margins are less that \code{calibTolerance}. Note that this criterion cannot be used if some margins are equal to zero.}
 #' 
 #' @examples
 #' N <- 300 ## population total
@@ -79,7 +87,7 @@
 #' @references Le Guennec, Josiane, and Olivier Sautory. "Calmar 2: Une nouvelle version 
 #' de la macro calmar de redressement d'echantillon par calage." Journees de Methodologie Statistique, 
 #' Paris. INSEE (2002).
-#' @return column containing the final calibrated weights
+#' @return Column containing the final calibrated weights
 #'
 #' @export
 calibration = function(data, marginMatrix, colWeights, method="linear", bounds=NULL, q=NULL
@@ -158,6 +166,10 @@ calibration = function(data, marginMatrix, colWeights, method="linear", bounds=N
       
     }
     
+    if(!(tolDefinition %in% c("default", "sas"))){
+      stop("tolDefinition must be `default` or `sas`.")
+    }
+    
   }
   
   marginCreation <- createFormattedMargins(data, marginMatrix, popTotal, pct)
@@ -168,7 +180,7 @@ calibration = function(data, marginMatrix, colWeights, method="linear", bounds=N
   # calibration is done on weights adjusted for nonresponse
   # (uniform adjustment)
   weights <- as.numeric(data.matrix(data[colWeights]))
-  
+
   if(scale) {
     if(is.null(popTotal)) {
       stop("When scale is TRUE, popTotal cannot be NULL")
